@@ -790,24 +790,27 @@
     </div>
   </div>
 
-  <div class="stats-panel">
-    <div class="stat">
-      <span>待审核投稿</span>
-      <strong id="pendingCount">--</strong>
-    </div>
-    <div class="stat">
-      <span>已收录回忆</span>
-      <strong>2,846</strong>
-    </div>
-    <div class="stat">
-      <span>同学参与</span>
-      <strong id="approvedCount">--</strong>
-    </div>
-    <div class="stat">
-      <span>累计访问</span>
-      <strong>18,732</strong>
-    </div>
+<div class="stats-panel">
+  <div class="stat">
+    <span>待审核投稿</span>
+    <strong id="pendingCount">--</strong>
   </div>
+
+  <div class="stat">
+    <span>已收录回忆</span>
+    <strong id="memoryCount">--</strong>
+  </div>
+
+  <div class="stat">
+    <span>已通过投稿</span>
+    <strong id="approvedCount">--</strong>
+  </div>
+
+  <div class="stat">
+    <span>累计访问</span>
+    <strong id="visitCount">--</strong>
+  </div>
+</div>
 </section>
 
 <section class="feature-row">
@@ -1011,8 +1014,10 @@
   const barrageForm = document.getElementById("barrageForm");
   const barrageInput = document.getElementById("barrageInput");
   const pendingCountEl = document.getElementById("pendingCount");
-  const approvedCountEl = document.getElementById("approvedCount");
-  const approvedGallery = document.getElementById("approvedGallery");
+ const approvedCountEl = document.getElementById("approvedCount");
+const memoryCountEl = document.getElementById("memoryCount");
+const visitCountEl = document.getElementById("visitCount");
+const approvedGallery = document.getElementById("approvedGallery");
 
   let isPlaying = false;
 
@@ -1140,27 +1145,50 @@
     }
   }
 
-  async function loadAlbumStats() {
-    try {
-      const res = await fetch("/api/album-stats?t=" + Date.now(), {
-        cache: "no-store"
-      });
+async function loadAlbumStats() {
+  const staticPhotoCount = document.querySelectorAll("#gallery .photo-card").length;
 
-      if (!res.ok) return;
+  memoryCountEl.textContent = staticPhotoCount;
+  visitCountEl.textContent = "--";
 
-      const data = await res.json();
+  try {
+    const res = await fetch("/api/album-stats?t=" + Date.now(), {
+      cache: "no-store"
+    });
 
-      if (typeof data.pendingCount === "number") {
-        pendingCountEl.textContent = data.pendingCount;
-      }
-
-      if (typeof data.approvedCount === "number") {
-        approvedCountEl.textContent = data.approvedCount;
-      }
-    } catch (err) {
-      console.log("统计接口暂未接入：", err);
+    if (!res.ok) {
+      return;
     }
+
+    const data = await res.json();
+
+    const pendingCount = typeof data.pendingCount === "number"
+      ? data.pendingCount
+      : 0;
+
+    const approvedCount = typeof data.approvedCount === "number"
+      ? data.approvedCount
+      : 0;
+
+    pendingCountEl.textContent = pendingCount;
+    approvedCountEl.textContent = approvedCount;
+
+    memoryCountEl.textContent = staticPhotoCount + approvedCount;
+
+    if (typeof data.visitCount === "number") {
+      visitCountEl.textContent = data.visitCount;
+    } else {
+      visitCountEl.textContent = "--";
+    }
+  } catch (err) {
+    console.log("统计接口暂未接入：", err);
+
+    pendingCountEl.textContent = "--";
+    approvedCountEl.textContent = "--";
+    memoryCountEl.textContent = staticPhotoCount;
+    visitCountEl.textContent = "--";
   }
+}
 
   barrageForm.addEventListener("submit", async function (e) {
     e.preventDefault();
